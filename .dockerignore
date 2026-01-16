@@ -1,0 +1,17 @@
+# Ignore git metadata (crucial for caching!)
+**/.git
+**/.gitignore
+
+# Ignore local build artifacts so they don't overwrite the container's build
+**/build/
+**/devel/
+**/install/
+**/log/
+
+# Ignore IDE settings
+**/.vscode/
+**/.idea/
+**/*.swp
+
+# Ignore dev container configuration
+**/.devcontainer/
