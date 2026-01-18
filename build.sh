@@ -1,2 +1,1 @@
-# Builds the base docker image
-docker build -f Dockerfile.base . --network=host -t depth_anything_3_ros2:base
+docker build --network=host -t da3_ros2:v3 .

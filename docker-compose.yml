@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
       network: host
-    image: da3_ros2:v2
+    image: da3_ros2:v3
     container_name: da3
     hostname: orbslam3
     network_mode: "host"

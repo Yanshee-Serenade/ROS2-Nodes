@@ -1,106 +1,37 @@
-# Default to NVIDIA CUDA image. 
-ARG BASE_IMAGE=nvidia/cuda:12.2.2-cudnn8-runtime-ubuntu22.04
-FROM ${BASE_IMAGE}
+# STAGE 1: Get the compiled bridge from your local builder
+FROM ros-jazzy-ros1-bridge-builder:latest AS builder
+# The builder image has the compiled artifacts. 
+# We don't need to run commands here, just define the stage for COPY.
 
-# Set environment
-ENV DEBIAN_FRONTEND=noninteractive
-ENV SHELL=/bin/bash
-ENV LC_ALL=en_US.UTF-8 
-ENV LANG=en_US.UTF-8 
+# STAGE 2: The Depth Anything V3 Image
+FROM tillbeemelmanns/ros2-depth-anything-v3:latest-dev
 
-# 1. System Config & Retries
-RUN echo 'Acquire::Retries "8";' > /etc/apt/apt.conf.d/80-retries
+# Copy the compiled bridge from the builder stage
+# The builder README indicates the workspace is at /ros-jazzy-ros1-bridge (root directory)
+COPY --from=builder /ros-jazzy-ros1-bridge /opt/ros-jazzy-ros1-bridge
 
-# 2. Install Basic Prerequisites & Locales
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    locales \
-    curl \
-    gnupg2 \
-    lsb-release \
-    ca-certificates \
-    software-properties-common \
-    && locale-gen en_US en_US.UTF-8 \
-    && update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 \
+# Install packages
+ARG DEBIAN_FRONTEND=noninteractive
+RUN echo 'Acquire::Retries "8";' > /etc/apt/apt.conf.d/80-retries \
+    && apt-get update && apt-get install -y \
+    libboost-thread1.83.0 \
+    libboost-chrono1.83.0 \
+    libboost-filesystem1.83.0 \
+    ros-jazzy-example-interfaces \
+    ros-jazzy-map-msgs \
+    ros-jazzy-tf2-msgs \
+    ros-jazzy-turtlesim \
+    ros-jazzy-rviz2 \
+    ros-jazzy-rosbag2 \
+    ros-jazzy-rosbag2-storage-mcap \
     && rm -rf /var/lib/apt/lists/*
 
-# 3. Add ROS 2 Humble Repository
-RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
+# Build DA3
+RUN colcon build --packages-select depth_anything_v3 --cmake-args -DCMAKE_BUILD_TYPE=Release
+# RUN source install/setup.bash && ./generate_engines.sh
 
-# 4. Install ROS 2, Build Tools, and YOUR SPECIFIC DEPENDENCIES
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ros-humble-desktop \
-    ros-humble-cv-bridge \
-    ros-humble-image-transport \
-    ros-humble-vision-opencv \
-    ros-humble-v4l2-camera \
-    python3-pip \
-    python3-dev \
-    python3-colcon-common-extensions \
-    python3-rosdep \
-    git \
-    wget \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    # --- Start of specific requested dependencies ---
-    libboost-regex1.74.0 \
-    libboost-thread1.74.0 \
-    libboost-chrono1.74.0 \
-    libboost-filesystem1.74.0 \
-    ros-humble-example-interfaces \
-    ros-humble-map-msgs \
-    ros-humble-tf2-msgs \
-    ros-humble-control-msgs \
-    ros-humble-sensor-msgs \
-    ros-humble-geometry-msgs \
-    ros-humble-std-msgs \
-    ros-humble-turtlesim \
-    ros-humble-action-tutorials-interfaces \
-    ros-humble-octomap-msgs \
-    # --- End of specific requested dependencies ---
-    && rm -rf /var/lib/apt/lists/*
-
-# 5. Python Dependencies
-# Downgrade setuptools to <58.2.0 to prevent warnings/errors with ROS 2 Humble builds
-RUN pip3 install --upgrade pip wheel "setuptools==58.2.0"
-
-# Install PyTorch (CUDA 12.1 compatible - works on 12.2 hosts)
-RUN pip3 install torch torchvision \
-    --index-url https://download.pytorch.org/whl/cu121
-
-# Install Depth Anything 3 & Helpers
-RUN pip3 install --no-cache-dir \
-    "transformers>=4.35.0" \
-    "huggingface-hub>=0.19.0" \
-    "opencv-python>=4.8.0" \
-    "pillow>=10.0.0" \
-    "numpy>=1.24.0,<2.0" \
-    "timm>=0.9.0" \
-    git+https://github.com/ByteDance-Seed/Depth-Anything-3.git
-
-# 6. Build The Workspace
-WORKDIR /ros2_ws
-COPY . /ros2_ws/src/depth_anything_3_ros2
-
-# Source ROS and build
-RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
-    colcon build --symlink-install --packages-select depth_anything_3_ros2"
-
-# 7. Entrypoint & Setup
-COPY docker/ros_entrypoint.sh /ros_entrypoint.sh
-RUN chmod +x /ros_entrypoint.sh
-
-# Ensure ROS environment is sourced automatically in bash
-RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc && \
-    echo "source /ros2_ws/install/setup.bash" >> ~/.bashrc
-
-# Install ROS1 Bridge
-FROM ros-humble-ros1-bridge-builder:latest AS builder
-COPY --from=builder /ros-humble-ros1-bridge /opt/ros-humble-ros1-bridge
-COPY --from=builder /control_msgs_ros2/install /opt/custom_msgs/control_msgs_ros2/install
-COPY --from=builder /custom_action/install /opt/custom_msgs/custom_action/install
+# Copy the modified entrypoint
+RUN echo "source /ros_entrypoint.sh" >> ~/.bashrc
 COPY ros_entrypoint.sh /ros_entrypoint.sh
 COPY init.sh /init.sh
-RUN chmod +x /ros_entrypoint.sh /init.sh
-
 ENTRYPOINT ["/ros_entrypoint.sh"]
