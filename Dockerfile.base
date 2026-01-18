@@ -1,6 +1,8 @@
+# Load bridge builder first
+FROM ros-humble-ros1-bridge-builder:latest AS builder
+
 # Default to NVIDIA CUDA image. 
-ARG BASE_IMAGE=nvidia/cuda:12.2.2-cudnn8-runtime-ubuntu22.04
-FROM ${BASE_IMAGE}
+FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu22.04
 
 # Set environment
 ENV DEBIAN_FRONTEND=noninteractive
@@ -60,13 +62,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # --- End of specific requested dependencies ---
     && rm -rf /var/lib/apt/lists/*
 
+# Install ROS1 Bridge
+COPY --from=builder /ros-humble-ros1-bridge /opt/ros-humble-ros1-bridge
+COPY --from=builder /control_msgs_ros2/install /opt/custom_msgs/control_msgs_ros2/install
+COPY --from=builder /custom_action/install /opt/custom_msgs/custom_action/install
+
 # 5. Python Dependencies
 # Downgrade setuptools to <58.2.0 to prevent warnings/errors with ROS 2 Humble builds
 RUN pip3 install --upgrade pip wheel "setuptools==58.2.0"
 
 # Install PyTorch (CUDA 12.1 compatible - works on 12.2 hosts)
 RUN pip3 install torch torchvision \
-    --index-url https://download.pytorch.org/whl/cu121
+    --index-url https://download.pytorch.org/whl/cu128
 
 # Install Depth Anything 3 & Helpers
 RUN pip3 install --no-cache-dir \
@@ -86,19 +93,11 @@ COPY . /ros2_ws/src/depth_anything_3_ros2
 RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
     colcon build --symlink-install --packages-select depth_anything_3_ros2"
 
-# 7. Entrypoint & Setup
-COPY docker/ros_entrypoint.sh /ros_entrypoint.sh
-RUN chmod +x /ros_entrypoint.sh
-
 # Ensure ROS environment is sourced automatically in bash
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc && \
     echo "source /ros2_ws/install/setup.bash" >> ~/.bashrc
 
-# Install ROS1 Bridge
-FROM ros-humble-ros1-bridge-builder:latest AS builder
-COPY --from=builder /ros-humble-ros1-bridge /opt/ros-humble-ros1-bridge
-COPY --from=builder /control_msgs_ros2/install /opt/custom_msgs/control_msgs_ros2/install
-COPY --from=builder /custom_action/install /opt/custom_msgs/custom_action/install
+# Setup entrypoint and init script
 COPY ros_entrypoint.sh /ros_entrypoint.sh
 COPY init.sh /init.sh
 RUN chmod +x /ros_entrypoint.sh /init.sh

@@ -8,6 +8,13 @@ services:
     container_name: da3
     hostname: orbslam3
     network_mode: "host"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     environment:
       - TZ=Asia/Hong_Kong
       - ROS_HOSTNAME=orbslam3
@@ -17,6 +24,7 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - /etc/localtime:/etc/localtime:ro
+      - /home/seqn/.cache/huggingface:/root/.cache/huggingface:ro
     command: bash /init.sh
     tty: true
     stdin_open: true
