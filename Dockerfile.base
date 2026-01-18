@@ -71,12 +71,13 @@ COPY --from=builder /custom_action/install /opt/custom_msgs/custom_action/instal
 # Downgrade setuptools to <58.2.0 to prevent warnings/errors with ROS 2 Humble builds
 RUN pip3 install --upgrade pip wheel "setuptools==58.2.0"
 
-# Install PyTorch (CUDA 12.1 compatible - works on 12.2 hosts)
+# Install PyTorch
 RUN pip3 install torch torchvision \
-    --index-url https://download.pytorch.org/whl/cu128
+    --index-url https://download.pytorch.org/whl/cu128 \
+    --ignore-installed sympy
 
 # Install Depth Anything 3 & Helpers
-RUN pip3 install --no-cache-dir \
+RUN pip3 install --ignore-installed --no-cache-dir \
     "transformers>=4.35.0" \
     "huggingface-hub>=0.19.0" \
     "opencv-python>=4.8.0" \
@@ -84,22 +85,3 @@ RUN pip3 install --no-cache-dir \
     "numpy>=1.24.0,<2.0" \
     "timm>=0.9.0" \
     git+https://github.com/ByteDance-Seed/Depth-Anything-3.git
-
-# 6. Build The Workspace
-WORKDIR /ros2_ws
-COPY . /ros2_ws/src/depth_anything_3_ros2
-
-# Source ROS and build
-RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
-    colcon build --symlink-install --packages-select depth_anything_3_ros2"
-
-# Ensure ROS environment is sourced automatically in bash
-RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc && \
-    echo "source /ros2_ws/install/setup.bash" >> ~/.bashrc
-
-# Setup entrypoint and init script
-COPY ros_entrypoint.sh /ros_entrypoint.sh
-COPY init.sh /init.sh
-RUN chmod +x /ros_entrypoint.sh /init.sh
-
-ENTRYPOINT ["/ros_entrypoint.sh"]
