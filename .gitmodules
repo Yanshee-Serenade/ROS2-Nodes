@@ -4,3 +4,6 @@
 [submodule "YOLO-World-ROS2"]
 	path = YOLO-World-ROS2
 	url = https://github.com/Yanshee-Serenade/YOLO-World-ROS2
+[submodule "Serenade-ROS2"]
+	path = Serenade-ROS2
+	url = https://github.com/Yanshee-Serenade/Serenade-ROS2
