@@ -7,9 +7,10 @@
 ## Build
 
 1. Download or optionally cache models
-    - YOLO-World: Download `yolov8l-world.pt` in project root
-    - Depth-Anything-3: Cache `depth-anything/DA3-BASE` in huggingface
-    - Serenade-ROS2: Cache `Qwen/Qwen3-VL-8B-Instruct` in huggingface
+    - Download `yolov8l-world.pt` in project root
+    - Cache `ViT-B-32.pt` in `~/.cache/clip`
+    - Cache `depth-anything/DA3-BASE` in `~/.cache/huggingface`
+    - Cache `Qwen/Qwen3-VL-8B-Instruct` in `~/.cache/huggingface`
 2. Build base image with `./build.sh`
 3. Build node with `docker compose build`
 
@@ -28,6 +29,8 @@ ros2 launch depth_anything_3_ros2 depth_anything_3.launch.py \
 ### YOLO-World
 
 > [!WARNING]
+> Change the mount path in docker-compose.yml!
+>
 > If you're not using default model, also change it in:
 > 
 > `YOLO-World-ROS2/yolo_world_ros2/yolo_world_ros2/yolo_world_ros2.py`
@@ -44,6 +47,8 @@ ros2 service call /yolo_world/classes yolo_world_interfaces/srv/SetClasses \
 ### Serenade
 
 > [!WARNING]
+> Change the mount path in docker-compose.yml!
+>
 > If you're not using default model, also change it in:
 > 
 > `Serenade-ROS2/serenade_server/config.py`
