@@ -1,3 +1,6 @@
 [submodule "Depth-Anything-3-ROS2"]
 	path = Depth-Anything-3-ROS2
 	url = https://github.com/Yanshee-Serenade/Depth-Anything-3-ROS2
+[submodule "YOLO-World-ROS2"]
+	path = YOLO-World-ROS2
+	url = https://github.com/Yanshee-Serenade/YOLO-World-ROS2

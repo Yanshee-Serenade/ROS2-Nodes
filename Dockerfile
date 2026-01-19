@@ -1,12 +1,18 @@
 FROM depth_anything_3_ros2:base
 
-# Build The Workspace
+# Build depth anything
 WORKDIR /ros2_ws
 COPY Depth-Anything-3-ROS2 /ros2_ws/src/depth_anything_3_ros2
-
-# Source ROS and build
 RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
-    colcon build --symlink-install --packages-select depth_anything_3_ros2"
+    colcon build --packages-select depth_anything_3_ros2 && \
+    rm -rf build log"
+
+# Build yolo world
+COPY YOLO-World-ROS2 /ros2_ws/src/yolo_world_ros2
+COPY yolov8l-world.pt /ros2_ws/yolov8l-world.pt
+RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
+    colcon build --packages-up-to yolo_world_ros2 && \
+    rm -rf build log"
 
 # Setup entrypoint and init script
 RUN echo "source /ros_entrypoint.sh" >> ~/.bashrc

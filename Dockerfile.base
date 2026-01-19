@@ -84,4 +84,9 @@ RUN pip3 install --ignore-installed --no-cache-dir \
     "pillow>=10.0.0" \
     "numpy>=1.24.0,<2.0" \
     "timm>=0.9.0" \
+    "ultralytics>=8.4.6" \
     git+https://github.com/ByteDance-Seed/Depth-Anything-3.git
+
+# Magic fix of numpy
+# The --upgrade is necessary, trust me!
+RUN pip install --upgrade numpy && pip install numpy==1.24.0
