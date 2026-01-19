@@ -2,12 +2,14 @@
 
 - Depth-Anything-3-ROS2
 - YOLO-World-ROS2
+- Serenade-ROS2
 
 ## Build
 
-1. Download models
-    - Depth-Anything-3: Download `DA3-Base` in `.cache/huggingface`
+1. Download or optionally cache models
     - YOLO-World: Download `yolov8l-world.pt` in project root
+    - Depth-Anything-3: Cache `depth-anything/DA3-BASE` in huggingface
+    - Serenade-ROS2: Cache `Qwen/Qwen3-VL-8B-Instruct` in huggingface
 2. Build base image with `./build.sh`
 3. Build node with `docker compose build`
 
@@ -27,6 +29,7 @@ ros2 launch depth_anything_3_ros2 depth_anything_3.launch.py \
 
 > [!WARNING]
 > If you're not using default model, also change it in:
+> 
 > `YOLO-World-ROS2/yolo_world_ros2/yolo_world_ros2/yolo_world_ros2.py`
 
 ```
@@ -36,4 +39,38 @@ ros2 launch yolo_world_ros2 yolo_world_ros2_launch.py \
 ros2 service call /yolo_world/execute std_srvs/srv/SetBool "data: True"
 ros2 service call /yolo_world/classes yolo_world_interfaces/srv/SetClasses \
 "{classes: [chair, phone, tablet, pencil], conf: 0.25}"
+```
+
+### Serenade
+
+> [!WARNING]
+> If you're not using default model, also change it in:
+> 
+> `Serenade-ROS2/serenade_server/config.py`
+
+```
+# Run the VLM server
+# Generates /answer from /question
+ros2 launch serenade_ros2 vlm_server.launch.py
+
+# Run the chatbot
+# Generates /question from ASR
+# Speaks /answer via TTS
+ros2 launch serenade_ros2 chatbot.launch.py
+
+# (Test) Make robot walk forever
+ros2 launch serenade_ros2 walker.launch.py
+
+# (Test) Validate point cloud in a stream manner
+ros2 launch serenade_ros2 pointcloud_validator.launch.py
+```
+
+Test VLM:
+
+```
+# Terminal 1: interactively publish question
+ros2 topic pub /question std_msgs/msg/String "data: '你看到了什么？请简短回答'" -1
+
+# Terminal 2: streams VLM reply
+ros2 topic echo /answer
 ```

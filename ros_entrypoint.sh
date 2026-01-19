@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 # 1. Source Base ROS 2
 source "/opt/ros/humble/setup.bash"
@@ -20,4 +19,6 @@ fi
 # 4. Source the Bridge
 source "/opt/ros-humble-ros1-bridge/install/local_setup.bash"
 
-exec "$@"
+if [ $# -gt 0 ]; then
+    exec "$@"
+fi
