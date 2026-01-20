@@ -19,6 +19,9 @@ fi
 # 4. Source the Bridge
 source "/opt/ros-humble-ros1-bridge/install/local_setup.bash"
 
+# 5. Environment variables
+export RMW_IMPLEMENTATION=rmw_zenoh_cpp
+
 if [ $# -gt 0 ]; then
     exec "$@"
 fi

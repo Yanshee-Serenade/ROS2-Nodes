@@ -24,8 +24,8 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - /etc/localtime:/etc/localtime:ro
-      - /home/seqn/.cache/huggingface:/root/.cache/huggingface:rw
-      - /home/seqn/.cache/clip:/root/.cache/clip:rw
+      - $HOME/.cache/huggingface:/root/.cache/huggingface:rw
+      - $HOME/.cache/clip:/root/.cache/clip:rw
     command: bash /init.sh
     tty: true
     stdin_open: true

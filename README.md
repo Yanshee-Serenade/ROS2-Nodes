@@ -29,8 +29,6 @@ ros2 launch depth_anything_3_ros2 depth_anything_3.launch.py \
 ### YOLO-World
 
 > [!WARNING]
-> Change the mount path in docker-compose.yml!
->
 > If you're not using default model, also change it in:
 > 
 > `YOLO-World-ROS2/yolo_world_ros2/yolo_world_ros2/yolo_world_ros2.py`
@@ -46,17 +44,13 @@ ros2 service call /yolo_world/classes yolo_world_interfaces/srv/SetClasses \
 
 ### Serenade
 
-> [!WARNING]
-> Change the mount path in docker-compose.yml!
->
-> If you're not using default model, also change it in:
-> 
-> `Serenade-ROS2/serenade_server/config.py`
-
 ```
 # Run the VLM server
 # Generates /answer from /question
-ros2 launch serenade_ros2 vlm_server.launch.py
+ros2 launch serenade_ros2 vlm_server.launch.py \
+  image_topic:=/camera/image_slow \
+  model_name:=Qwen/Qwen3-VL-8B-Instruct \
+  max_new_tokens:=256
 
 # Run the chatbot
 # Generates /question from ASR

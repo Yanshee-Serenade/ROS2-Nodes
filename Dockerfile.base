@@ -94,3 +94,8 @@ RUN pip install --upgrade numpy && pip install "numpy==1.24.0"
 
 # Append dependency
 RUN pip install num2words accelerate bitsandbytes
+
+# Append ROS dependency
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-humble-rmw-zenoh-cpp \
+    && rm -rf /var/lib/apt/lists/*
