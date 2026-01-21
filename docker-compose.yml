@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   da3:
     build:
@@ -8,24 +10,45 @@ services:
     container_name: da3
     hostname: orbslam3
     network_mode: "host"
+    
+    # NVIDIA runtime configuration
+    runtime: nvidia
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
               count: all
-              capabilities: [gpu]
+              capabilities: [gpu, utility, compute, video]
+    
+    # IPC settings for shared memory
+    ipc: host
+    
+    # Additional performance settings
+    shm_size: '16gb'  # Increase shared memory
+    privileged: true   # Required for some GPU operations
+    
     environment:
       - TZ=Asia/Hong_Kong
       - ROS_HOSTNAME=orbslam3
       - ROS_MASTER_URI=http://orbslam3:11311
       - DISPLAY=:2
       - QT_X11_NO_MITSHM=1
+      - NVIDIA_DRIVER_CAPABILITIES=all  # Enable all NVIDIA capabilities
+      - NVIDIA_VISIBLE_DEVICES=all     # Make all GPUs visible
+    
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - /etc/localtime:/etc/localtime:ro
       - $HOME/.cache/huggingface:/root/.cache/huggingface:rw
       - $HOME/.cache/clip:/root/.cache/clip:rw
+      - /dev/shm:/dev/shm  # Mount host shared memory
+    
+    # Performance optimizations
+    ulimits:
+      memlock: -1
+      stack: 67108864
+    
     command: bash /init.sh
     tty: true
     stdin_open: true

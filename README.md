@@ -44,6 +44,10 @@ ros2 service call /yolo_world/classes yolo_world_interfaces/srv/SetClasses \
 
 ### Serenade
 
+> [!WARNING]
+> If you use chatbot, you should change `serenade_chatbot/main.py` L37
+> to your actual Yanshee robot IP!
+
 ```
 # Run the VLM server
 # Generates /answer from /question

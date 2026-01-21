@@ -72,6 +72,8 @@ COPY --from=builder /custom_action/install /opt/custom_msgs/custom_action/instal
 RUN pip3 install --upgrade pip wheel "setuptools==58.2.0"
 
 # Install PyTorch
+# Even though it will be ignored/re-installed later, 
+# I'm hesitant to remove this line.
 RUN pip3 install torch torchvision \
     --index-url https://download.pytorch.org/whl/cu128 \
     --ignore-installed sympy
@@ -88,8 +90,12 @@ RUN pip3 install --ignore-installed --no-cache-dir \
     "aiohttp==3.13.3" \
     git+https://github.com/ByteDance-Seed/Depth-Anything-3.git
 
-# Magic fix of numpy, and append dependency
-# The --upgrade is necessary, trust me!
+# FIX for Depth Anything 3 compatibility
+# Empirical testing shows this specific sequence is required:
+# 1. Upgrade numpy first (resolves some binary/cache issues)
+# 2. Then pin to exact version 1.24.0
+# Removing either step causes the ROS2 wrapper to fail with
+# mysterious C extension errors. Don't question it, just accept it.
 RUN pip install --upgrade numpy && pip install "numpy==1.24.0"
 
 # Append dependency
@@ -99,3 +105,18 @@ RUN pip install num2words accelerate bitsandbytes
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-rmw-zenoh-cpp \
     && rm -rf /var/lib/apt/lists/*
+
+# We need PyTorch 2.8.0 because 2.9.1 has critical performance bugs:
+# - Vision models run 20x slower (Issue #172537)
+# - Conv3D operations are broken (Issue #168167)
+#
+# But we can't just install 2.8.0 from the start, because... reasons.
+# Something in the dependency chain needs that initial installation.
+#
+# So here we are: installing PyTorch twice, wasting bandwidth,
+# creating redundant layers, and defying all Docker best practices.
+#
+# This Dockerfile has become a monument to "whatever works."
+# If you're feeling brave, try to clean it up. 
+# If you succeed, please share your wisdom. We've tried.
+RUN pip install torch==2.8.0 torchvision==0.23.0 --index-url https://download.pytorch.org/whl/cu128 --no-cache-dir
