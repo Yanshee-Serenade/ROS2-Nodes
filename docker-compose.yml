@@ -25,10 +25,6 @@ services:
     # IPC settings for shared memory
     ipc: host
     
-    # Additional performance settings
-    shm_size: '16gb'
-    privileged: true
-    
     environment:
       - TZ=Asia/Hong_Kong
       - ROS_HOSTNAME=orbslam3
@@ -45,12 +41,8 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - $HOME/.cache/huggingface:/cache/huggingface:rw
       - $HOME/.cache/clip:/cache/clip:rw
-      - /dev/shm:/dev/shm
+      - $HOME/.cache/serenade:/cache/serenade:rw
       - .:/ros2_ws/src
-    
-    ulimits:
-      memlock: -1
-      stack: 67108864
     
     command: bash /ros2_ws/src/init.sh
     tty: true
