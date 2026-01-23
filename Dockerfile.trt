@@ -1,0 +1,85 @@
+# Load bridge builder first
+FROM ros-humble-ros1-bridge-builder:latest AS builder
+
+# Default to NVIDIA TensorRT image.
+FROM nvcr.io/nvidia/tensorrt:24.10-py3
+
+# Set environment
+ENV DEBIAN_FRONTEND=noninteractive
+ENV SHELL=/bin/bash
+ENV LC_ALL=en_US.UTF-8
+ENV LANG=en_US.UTF-8
+
+# 1. System Config & Retries
+RUN echo 'Acquire::Retries "8";' > /etc/apt/apt.conf.d/80-retries
+
+# 2. Install ALL System Dependencies (Merged to save layers)
+# We merge the ROS setup, basic tools, and specific deps into one block.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    locales \
+    curl \
+    gnupg2 \
+    lsb-release \
+    ca-certificates \
+    software-properties-common \
+    git \
+    wget \
+    python3-pip \
+    python3-dev \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    # Setup Locales
+    && locale-gen en_US en_US.UTF-8 \
+    && update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 \
+    # Setup ROS 2 Repo
+    && curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    # ROS 2 Base & Tools
+    ros-humble-desktop \
+    ros-humble-cv-bridge \
+    ros-humble-image-transport \
+    ros-humble-vision-opencv \
+    ros-humble-v4l2-camera \
+    python3-colcon-common-extensions \
+    python3-rosdep \
+    ros-humble-rmw-zenoh-cpp \
+    # Specific Dependencies
+    libboost-regex1.74.0 \
+    libboost-thread1.74.0 \
+    libboost-chrono1.74.0 \
+    libboost-filesystem1.74.0 \
+    ros-humble-example-interfaces \
+    ros-humble-map-msgs \
+    ros-humble-tf2-msgs \
+    ros-humble-control-msgs \
+    ros-humble-sensor-msgs \
+    ros-humble-geometry-msgs \
+    ros-humble-std-msgs \
+    ros-humble-turtlesim \
+    ros-humble-action-tutorials-interfaces \
+    ros-humble-octomap-msgs \
+    && rm -rf /var/lib/apt/lists/*
+
+# 3. Install torch
+RUN pip3 install --no-cache-dir --upgrade pip wheel "setuptools==79.0.1" \
+    && pip3 install --no-cache-dir "numpy==1.24.0" \
+    && pip3 install --no-cache-dir \
+       --ignore-installed sympy \
+       torch==2.8.0 \
+       torchvision==0.23.0 \
+       xformers==0.0.32.post2 \
+       --index-url https://download.pytorch.org/whl/cu128
+
+# 4. Install additional dependencies
+COPY requirements.txt /tmp/requirements.txt
+COPY filter_requirements.py /tmp/filter_requirements.py
+RUN python3 /tmp/filter_requirements.py /tmp/requirements.txt /tmp/filtered_requirements.txt && \
+    pip3 install --no-cache-dir --no-deps -r /tmp/filtered_requirements.txt && \
+    pip3 install --no-cache-dir --upgrade numpy && \
+    pip3 install --no-cache-dir numpy==1.24.0
+
+# 5. Install ROS1 Bridge (Artifacts)
+COPY --from=builder /ros-humble-ros1-bridge /opt/ros-humble-ros1-bridge
+COPY --from=builder /control_msgs_ros2/install /opt/custom_msgs/control_msgs_ros2/install
+COPY --from=builder /custom_action/install /opt/custom_msgs/custom_action/install
