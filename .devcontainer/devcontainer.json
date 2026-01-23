@@ -1,0 +1,22 @@
+{
+	"name": "Serenade-ROS2 Dev",
+	"dockerComposeFile": "../docker-compose.yml",
+	"service": "da3",
+	"workspaceFolder": "/ros2_ws/src",
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"terminal.integrated.defaultProfile.linux": "bash",
+				"python.defaultInterpreterPath": "/usr/bin/python3"
+			},
+			"extensions": [
+				"github.copilot",
+				"github.copilot-chat",
+				"ms-vscode.cpptools",
+				"ranch-hand-robotics.rde-ros-2",
+				"ms-vscode.cmake-tools",
+				"ms-azuretools.vscode-containers"
+			]
+		}
+	}
+}

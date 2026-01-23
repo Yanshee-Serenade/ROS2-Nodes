@@ -6,13 +6,14 @@
 
 ## Build
 
-1. Download or optionally cache models
+1. Make sure you've set `$UID`, `$GID` and `$USER` correct
+2. Download or optionally cache models
     - Download `yolov8l-world.pt` in project root
     - Cache `ViT-B-32.pt` in `~/.cache/clip`
     - Cache `depth-anything/DA3-BASE` in `~/.cache/huggingface`
     - Cache `Qwen/Qwen3-VL-8B-Instruct` in `~/.cache/huggingface`
-2. Build base image with `./build.sh`
-3. Build node with `docker compose build`
+3. Build base image with `./build.sh`
+4. Build node with `docker compose build`
 
 ## Run
 

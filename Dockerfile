@@ -1,29 +1,29 @@
-FROM depth_anything_3_ros2:base2
+FROM depth_anything_3_ros2:gemini
 
-# Build depth anything
+# Create a non-root user with the same UID/GID as the host
+ARG USERNAME=dockeruser
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+# Create user and group
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    && echo "$USERNAME ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME
+USER $USERNAME
+
+# Set working directory
 WORKDIR /ros2_ws
-COPY Depth-Anything-3-ROS2 /ros2_ws/src/depth_anything_3_ros2
+
+# Copy all ROS2 packages to src directory
+COPY . /ros2_ws/src
+
+# Build all packages at once using --symlink-install
 RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
-    colcon build --packages-select depth_anything_3_ros2 && \
-    rm -rf build log"
+    colcon build --symlink-install"
 
-# Build yolo world
-COPY YOLO-World-ROS2 /ros2_ws/src/yolo_world_ros2
-COPY yolov8l-world.pt /ros2_ws/yolov8l-world.pt
-RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
-    colcon build --packages-up-to yolo_world_ros2 && \
-    rm -rf build log"
+# Set up environment variables and entrypoint script
+RUN echo "source /ros2_ws/src/ros_entrypoint.sh" >> ~/.bashrc
 
-# Build serenade
-COPY Serenade-ROS2 /ros2_ws/src/serenade_ros2
-RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
-    colcon build --packages-select serenade_ros2 && \
-    rm -rf build log"
-
-# Setup entrypoint and init script
-RUN echo "source /ros_entrypoint.sh" >> ~/.bashrc
-COPY ros_entrypoint.sh /ros_entrypoint.sh
-COPY init.sh /init.sh
-RUN chmod +x /ros_entrypoint.sh /init.sh
-
-ENTRYPOINT ["/ros_entrypoint.sh"]
+# Set environment variables and entrypoint script
+ENTRYPOINT ["/ros2_ws/src/ros_entrypoint.sh"]

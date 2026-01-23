@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   da3:
     build:
@@ -10,6 +8,9 @@ services:
     container_name: da3
     hostname: orbslam3
     network_mode: "host"
+    
+    # Run as current user
+    user: "dockeruser"
     
     # NVIDIA runtime configuration
     runtime: nvidia
@@ -25,8 +26,8 @@ services:
     ipc: host
     
     # Additional performance settings
-    shm_size: '16gb'  # Increase shared memory
-    privileged: true   # Required for some GPU operations
+    shm_size: '16gb'
+    privileged: true
     
     environment:
       - TZ=Asia/Hong_Kong
@@ -34,21 +35,23 @@ services:
       - ROS_MASTER_URI=http://orbslam3:11311
       - DISPLAY=:2
       - QT_X11_NO_MITSHM=1
-      - NVIDIA_DRIVER_CAPABILITIES=all  # Enable all NVIDIA capabilities
-      - NVIDIA_VISIBLE_DEVICES=all     # Make all GPUs visible
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - NVIDIA_VISIBLE_DEVICES=all
+      - HF_HOME=/cache/huggingface
+      - CLIP_CACHE=/cache/clip
     
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - /etc/localtime:/etc/localtime:ro
-      - $HOME/.cache/huggingface:/root/.cache/huggingface:rw
-      - $HOME/.cache/clip:/root/.cache/clip:rw
-      - /dev/shm:/dev/shm  # Mount host shared memory
+      - $HOME/.cache/huggingface:/cache/huggingface:rw
+      - $HOME/.cache/clip:/cache/clip:rw
+      - /dev/shm:/dev/shm
+      - .:/ros2_ws/src
     
-    # Performance optimizations
     ulimits:
       memlock: -1
       stack: 67108864
     
-    command: bash /init.sh
+    command: bash /ros2_ws/src/init.sh
     tty: true
     stdin_open: true

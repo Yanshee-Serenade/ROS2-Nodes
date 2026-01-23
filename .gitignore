@@ -1,1 +1,6 @@
 **/*.pt
+**/.vscode/
+**/build/
+**/devel/
+**/install/
+**/log/
