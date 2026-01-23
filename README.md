@@ -12,7 +12,7 @@
     - Cache `ViT-B-32.pt` in `~/.cache/clip`
     - Cache `depth-anything/DA3-BASE` in `~/.cache/huggingface`
     - Cache `Qwen/Qwen3-VL-8B-Instruct` in `~/.cache/huggingface`
-3. Build base image with `./build.sh`
+3. Build base image with `docker build -f Dockerfile.gemini . --network=host -t depth_anything_3_ros2:gemini`
 4. Build node with `docker compose build`
 
 ## Run
@@ -53,8 +53,8 @@ ros2 service call /yolo_world/classes yolo_world_interfaces/srv/SetClasses \
 # Run the VLM server
 # Generates /answer from /question
 ros2 launch serenade_ros2 vlm_server.launch.py \
-  image_topic:=/camera/image_slow \
-  model_name:=Qwen/Qwen3-VL-8B-Instruct \
+  image_topic:=/yolo_world/annotated_image \
+  model_name:=Qwen/Qwen3-VL-4B-Instruct \
   max_new_tokens:=256
 
 # Run the chatbot
@@ -64,9 +64,6 @@ ros2 launch serenade_ros2 chatbot.launch.py
 
 # (Test) Make robot walk forever
 ros2 launch serenade_ros2 walker.launch.py
-
-# (Test) Validate point cloud in a stream manner
-ros2 launch serenade_ros2 pointcloud_validator.launch.py
 ```
 
 Test VLM:
@@ -74,7 +71,18 @@ Test VLM:
 ```
 # Terminal 1: interactively publish question
 ros2 topic pub /question std_msgs/msg/String "data: '你看到了什么？请简短回答'" -1
+ros2 topic pub /question std_msgs/msg/String "data: '请走向离你最远的椅子'" -1
 
 # Terminal 2: streams VLM reply
 ros2 topic echo /answer
+```
+
+Question format:
+
+```
+# Normal messages that cannot be interrupted
+ros2 topic pub /question std_msgs/msg/String "data: '请走向离你最远的奶龙'" -1
+
+# An interruptible message
+ros2 topic pub /question std_msgs/msg/String "data: '请简要概括现在的情况，并决定下一步行动'" -1
 ```
