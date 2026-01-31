@@ -7,3 +7,6 @@
 [submodule "Serenade-ROS2"]
 	path = Serenade-ROS2
 	url = https://github.com/Yanshee-Serenade/Serenade-ROS2
+[submodule "Yanshee-IK-ROS2"]
+	path = Yanshee-IK-ROS2
+	url = https://github.com/Yanshee-Serenade/Yanshee-IK-ROS2
