@@ -1,0 +1,1 @@
+../build/yanshee_ik/bin/inverse_arm_performance_test
