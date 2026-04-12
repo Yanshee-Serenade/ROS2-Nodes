@@ -49,6 +49,9 @@ ros2 service call /yolo_world/classes yolo_world_interfaces/srv/SetClasses \
 > to your actual Yanshee robot IP!
 
 ```
+# We provide a command to run the full dependencies
+ros2 launch serenade_ros2 deps.launch.py
+
 # Run the Anthropic-compatible agent
 # Subscribes to /question, publishes /answer, and calls /walker_command tools
 ros2 launch serenade_ros2 vlm_server.launch.py \
