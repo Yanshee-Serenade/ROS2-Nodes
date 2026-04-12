@@ -11,7 +11,6 @@
     - Download `yolov8l-world.pt` in project root
     - Cache `ViT-B-32.pt` in `~/.cache/clip`
     - Cache `depth-anything/DA3-BASE` in `~/.cache/huggingface`
-    - Cache `Qwen/Qwen3-VL-8B-Instruct` in `~/.cache/huggingface`
 3. Build base image with `docker build -f Dockerfile.gemini . --network=host -t depth_anything_3_ros2:gemini`
 4. Build node with `docker compose build`
 
@@ -50,39 +49,44 @@ ros2 service call /yolo_world/classes yolo_world_interfaces/srv/SetClasses \
 > to your actual Yanshee robot IP!
 
 ```
-# Run the VLM server
-# Generates /answer from /question
+# Run the Anthropic-compatible agent
+# Subscribes to /question, publishes /answer, and calls /walker_command tools
 ros2 launch serenade_ros2 vlm_server.launch.py \
   image_topic:=/yolo_world/annotated_image \
-  model_name:=Qwen/Qwen3-VL-4B-Instruct \
-  max_new_tokens:=256
+  auth_token:=YOUR_TOKEN \
+  base_url:=https://api.anthropic.com \
+  model:=claude-sonnet-4-5 \
+  max_tokens:=8000
 
 # Run the chatbot
-# Generates /question from ASR
+# Publishes /question from ASR
 # Speaks /answer via TTS
 ros2 launch serenade_ros2 chatbot.launch.py
 
-# (Test) Make robot walk forever
+# Run the command-driven walker
+# Subscribes to /walker_command and publishes /walker_result
 ros2 launch serenade_ros2 walker.launch.py
 ```
 
-Test VLM:
+Test agent:
 
 ```
-# Terminal 1: interactively publish question
+# Terminal 1: interactively publish prompts
 ros2 topic pub /question std_msgs/msg/String "data: '你看到了什么？请简短回答'" -1
 ros2 topic pub /question std_msgs/msg/String "data: '请走向离你最远的椅子'" -1
 
-# Terminal 2: streams VLM reply
+# Terminal 2: spoken tool text
 ros2 topic echo /answer
+
+# Terminal 3: walker command/result JSON
+ros2 topic echo /walker_command
+ros2 topic echo /walker_result
 ```
 
 Question format:
 
 ```
-# Normal messages that cannot be interrupted
+# Any new prompt on /question interrupts the active agent/walker tool if one is running.
 ros2 topic pub /question std_msgs/msg/String "data: '请走向离你最远的奶龙'" -1
-
-# An interruptible message
-ros2 topic pub /question std_msgs/msg/String "data: '请简要概括现在的情况，并决定下一步行动'" -1
+ros2 topic pub /question std_msgs/msg/String "data: '停一下，看看左边'" -1
 ```

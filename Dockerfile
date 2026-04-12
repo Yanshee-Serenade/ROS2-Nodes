@@ -1,5 +1,8 @@
 FROM depth_anything_3_ros2:gemini
 
+# Install additional package
+RUN pip install anthropic pyright
+
 # Create a non-root user with the same UID/GID as the host
 ARG USERNAME=dockeruser
 ARG USER_UID=1000
