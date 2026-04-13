@@ -49,13 +49,17 @@ ros2 service call /yolo_world/classes yolo_world_interfaces/srv/SetClasses \
 > to your actual Yanshee robot IP!
 
 ```
-# We provide a command to run the full dependencies
-ros2 launch serenade_ros2 deps.launch.py
+# Run DA3 and the RDF point cloud used for walk limits
+ros2 launch serenade_ros2 deps.launch.py \
+  image_topic:=/camera/image_raw \
+  camera_info_topic:=/camera/camera_info \
+  point_cloud_topic:=/point_cloud
 
 # Run the Anthropic-compatible agent
 # Subscribes to /question, publishes /answer, and calls /walker_command tools
 ros2 launch serenade_ros2 vlm_server.launch.py \
-  image_topic:=/yolo_world/annotated_image \
+  image_topic:=/camera/image_raw \
+  point_cloud_topic:=/point_cloud \
   auth_token:=YOUR_TOKEN \
   base_url:=https://api.anthropic.com \
   model:=claude-sonnet-4-5 \
@@ -86,10 +90,20 @@ ros2 topic echo /walker_command
 ros2 topic echo /walker_result
 ```
 
+Agent tools:
+
+```
+# SPIN(word, degree): say a short phrase and rotate in place; 20 degrees = 1 second
+# WALK(word, meter): say a short phrase and walk forward only; 0.1 m = 3 seconds
+# WAIT(word, sec): say a short phrase and wait; sec must be an integer multiple of 1
+# FINISH(word): say a short phrase and end the current task
+```
+
 Question format:
 
 ```
 # Any new prompt on /question interrupts the active agent/walker tool if one is running.
+# It also interrupts WAIT, so WAIT(..., 1000) can be used after the agent asks a question.
 ros2 topic pub /question std_msgs/msg/String "data: '请走向离你最远的奶龙'" -1
 ros2 topic pub /question std_msgs/msg/String "data: '停一下，看看左边'" -1
 ```
